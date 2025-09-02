@@ -60,11 +60,14 @@ export function useGamificationData(): UseGamificationDataResult {
       if (sessionsError) throw sessionsError;
 
       const currentStreak = calculateCurrentStudyStreak(completedSessions || []);
-      developerLog('✅ useGamificationData: Calculated current streak:', currentStreak);
+      const longestStreakComputed = calculateLongestStudyStreak(completedSessions || []);
+      developerLog('✅ useGamificationData: Calculated streaks:', { currentStreak, longestStreakComputed });
 
       // Combine fetched stats with calculated current streak
       const finalUserStats: UserStats = {
         ...(statsData || { user_id: user.id, total_xp: 0, current_level: 1, longest_streak: 0 }),
+        // Ensure longest_streak reflects reality even if DB hasn't been updated yet
+        longest_streak: Math.max(statsData?.longest_streak || 0, longestStreakComputed || 0),
         current_streak: currentStreak,
       };
       setUserStats(finalUserStats);
