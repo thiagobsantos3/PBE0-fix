@@ -38,15 +38,16 @@ export function QuizRunner({
   // Track when each question starts for accurate time calculation
   const questionStartTimeRef = useRef<number | null>(null);
   const hasRestoredFromSessionRef = useRef<boolean>(false);
-
+  const [revealEnabled, setRevealEnabled] = useState(false);
+ 
   // Use quizSessionId from URL params if available, otherwise use prop
   const quizSessionId = params.quizSessionId || propQuizSessionId;
   const backUrl = propBackUrl || '/quiz';
-
+ 
   // Load session data
   const [session, setSession] = useState<QuizSession | null>(null);
   const [loading, setLoading] = useState(true);
-
+ 
   // Quiz state
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -54,8 +55,7 @@ export function QuizRunner({
   const [showPartialModal, setShowPartialModal] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showModeInfo, setShowModeInfo] = useState(false);
-  const [revealEnabled, setRevealEnabled] = useState(false);
-
+ 
   // Custom hooks
   const { isDarkMode, themeClasses, toggleDarkMode } = useQuizTheme(isFullScreen);
   
@@ -236,6 +236,7 @@ export function QuizRunner({
     const newTime = currentQuestion?.time_to_answer || 30;
     resetTimer(newTime);
     setHasTimeExpired(false);
+    questionStartTimeRef.current = Date.now();
     
     saveSessionState({
       show_answer: false,
