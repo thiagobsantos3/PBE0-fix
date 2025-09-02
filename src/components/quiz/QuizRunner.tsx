@@ -291,6 +291,22 @@ export function QuizRunner({
       allResults: newResults
     });
     
+    // If this was the last question, finalize the quiz now with accurate totals
+    if (session.current_question_index >= session.questions.length - 1) {
+      const finalTotalPoints = newResults.reduce((sum, r) => sum + (Number(r.pointsEarned) || 0), 0);
+      setQuizCompleted(true);
+      stopTimer();
+      saveSessionState({
+        results: newResults,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        timer_active: false,
+        total_points: finalTotalPoints
+      });
+      return;
+    }
+    
+    // Otherwise, save and move to next question
     saveSessionState({
       results: newResults,
     });
@@ -343,6 +359,21 @@ export function QuizRunner({
         allResults: newResults
       });
       
+      // Finalize if last question
+      if (session.current_question_index >= session.questions.length - 1) {
+        const finalTotalPoints = newResults.reduce((sum, r) => sum + (Number(r.pointsEarned) || 0), 0);
+        setQuizCompleted(true);
+        stopTimer();
+        saveSessionState({
+          results: newResults,
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          timer_active: false,
+          total_points: finalTotalPoints
+        });
+        return;
+      }
+      
       saveSessionState({ results: newResults });
       nextQuestion();
     }
@@ -392,6 +423,23 @@ export function QuizRunner({
       newResult: result,
       allResults: newResults
     });
+    
+    // Finalize if last question
+    if (session.current_question_index >= session.questions.length - 1) {
+      const finalTotalPoints = newResults.reduce((sum, r) => sum + (Number(r.pointsEarned) || 0), 0);
+      setQuizCompleted(true);
+      stopTimer();
+      saveSessionState({
+        results: newResults,
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        timer_active: false,
+        total_points: finalTotalPoints
+      });
+      setShowPartialModal(false);
+      setPartialPoints(0);
+      return;
+    }
     
     saveSessionState({
       results: newResults
