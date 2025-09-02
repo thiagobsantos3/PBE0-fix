@@ -88,16 +88,9 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
     try {
       developerLog('🚀 Creating quiz session...', sessionData);
       
-      // Serialize potentially JSON/Text columns for DB while keeping arrays in memory
-      const insertPayload: any = {
-        ...sessionData,
-        questions: JSON.stringify(sessionData.questions),
-        results: JSON.stringify(sessionData.results),
-      };
-
       const { data, error } = await supabase
         .from('quiz_sessions')
-        .insert([insertPayload])
+        .insert([sessionData])
         .select()
         .single();
 
@@ -109,8 +102,7 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
       developerLog('✅ Quiz session created successfully:', data);
 
       // Add to local state
-      // Use original arrays locally
-      setSessions(prev => [{ ...(data as any), questions: sessionData.questions, results: sessionData.results }, ...prev]);
+      setSessions(prev => [data as any, ...prev]);
       
       return data.id;
     } catch (error) {
@@ -151,18 +143,9 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
         });
       }
       
-      // Serialize for DB
-      const dbPayload: any = { ...updates };
-      if (updates.results) {
-        dbPayload.results = JSON.stringify(updates.results);
-      }
-      if (updates.questions) {
-        dbPayload.questions = JSON.stringify(updates.questions);
-      }
-
       const { error } = await supabase
         .from('quiz_sessions')
-        .update(dbPayload)
+        .update(updates)
         .eq('id', sessionId);
 
       if (error) throw error;
@@ -489,7 +472,14 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
       // Update local state
       setSessions(prev => prev.map(session => 
         session.id === sessionId 
-          ? { ...session, ...updates, updated_at: new Date().toISOString() }
+          ? { 
+              ...session, 
+              ...updates, 
+              // Ensure arrays remain arrays in memory even if DB stored strings
+              questions: typeof (updates as any).questions === 'string' ? JSON.parse((updates as any).questions) : updates.questions ?? session.questions,
+              results: typeof (updates as any).results === 'string' ? JSON.parse((updates as any).results) : updates.results ?? session.results,
+              updated_at: new Date().toISOString() 
+            }
           : session
       ));
     } catch (error) {

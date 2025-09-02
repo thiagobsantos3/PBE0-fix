@@ -273,7 +273,7 @@ export function QuizRunner({
       timeSpent: result.timeSpent
     });
     
-    const newResults = [...session.results, result];
+    const newResults = [...(session.results || []), result];
     
     // Log to database
     await logQuestionResult(
@@ -350,7 +350,7 @@ export function QuizRunner({
         false // is_correct = false
       );
       
-      const newResults = [...session.results, result];
+      const newResults = [...(session.results || []), result];
       
       developerLog('📊 QuizRunner: Updated results array (incorrect):', {
         previousResultsLength: session.results.length,
@@ -415,7 +415,7 @@ export function QuizRunner({
       false // is_correct = false (since it's not fully correct)
     );
     
-    const newResults = [...session.results, result];
+    const newResults = [...(session.results || []), result];
     
     developerLog('📊 QuizRunner: Updated results array (partial):', {
       previousResultsLength: session.results.length,
