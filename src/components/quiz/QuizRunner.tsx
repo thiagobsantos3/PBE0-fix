@@ -54,6 +54,7 @@ export function QuizRunner({
   const [showPartialModal, setShowPartialModal] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showModeInfo, setShowModeInfo] = useState(false);
+  const [revealEnabled, setRevealEnabled] = useState(false);
 
   // Custom hooks
   const { isDarkMode, themeClasses, toggleDarkMode } = useQuizTheme(isFullScreen);
@@ -120,10 +121,6 @@ export function QuizRunner({
           setTimerStartedState(loadedSession.timer_started);
           if (!loadedSession.show_answer) {
             questionStartTimeRef.current = Date.now();
-            if (!loadedSession.timer_started) {
-              startTimer();
-              saveSessionState({ timer_active: true, timer_started: true });
-            }
           }
         }
         hasRestoredFromSessionRef.current = true;
@@ -137,6 +134,29 @@ export function QuizRunner({
       setLoading(false);
     }
   }, [quizSessionId, loadQuizSession, navigate, backUrl, resetTimer, setHasTimeExpired, setTimerActiveState, setTimerStartedState]);
+
+  // Enable Show Answer independently after a short delay whenever a question is shown
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    if (session && !showAnswer) {
+      setRevealEnabled(false);
+      timeoutId = window.setTimeout(() => {
+        setRevealEnabled(true);
+      }, 2000);
+    }
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [session?.current_question_index, showAnswer]);
+
+  // If time expires, ensure the reveal is enabled
+  useEffect(() => {
+    if (hasTimeExpired) {
+      setRevealEnabled(true);
+    }
+  }, [hasTimeExpired]);
 
   // Save session state whenever it changes
   const saveSessionState = (updates: Partial<QuizSession>) => {
@@ -194,10 +214,8 @@ export function QuizRunner({
   };
 
   const handleShowAnswer = () => {
-    // Guard: do not allow reveal unless timer has started and minimal time elapsed or expired
-    const limit = currentQuestion?.time_to_answer || 30;
-    const elapsed = Math.max(0, limit - timeLeft);
-    if (!timerStarted || (!hasTimeExpired && elapsed < 2)) {
+    // Allow reveal if enabled by delay or time expired
+    if (!revealEnabled && !hasTimeExpired) {
       return;
     }
     setShowAnswer(true);
@@ -580,11 +598,7 @@ export function QuizRunner({
           isFullScreen={isFullScreen}
           showAnswer={showAnswer}
           hasTimeExpired={hasTimeExpired}
-          canRevealAnswer={(() => {
-            const limit = currentQuestion?.time_to_answer || 30;
-            const elapsed = Math.max(0, limit - timeLeft);
-            return timerStarted && (hasTimeExpired || elapsed >= 2);
-          })()}
+          canRevealAnswer={revealEnabled}
           themeClasses={themeClasses}
           onShowAnswer={handleShowAnswer}
           onShowQuestion={handleShowQuestion}
