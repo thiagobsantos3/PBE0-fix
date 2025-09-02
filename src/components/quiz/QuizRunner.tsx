@@ -120,6 +120,10 @@ export function QuizRunner({
           setTimerStartedState(loadedSession.timer_started);
           if (!loadedSession.show_answer) {
             questionStartTimeRef.current = Date.now();
+            if (!loadedSession.timer_started) {
+              startTimer();
+              saveSessionState({ timer_active: true, timer_started: true });
+            }
           }
         }
         hasRestoredFromSessionRef.current = true;
@@ -190,6 +194,12 @@ export function QuizRunner({
   };
 
   const handleShowAnswer = () => {
+    // Guard: do not allow reveal unless timer has started and minimal time elapsed or expired
+    const limit = currentQuestion?.time_to_answer || 30;
+    const elapsed = Math.max(0, limit - timeLeft);
+    if (!timerStarted || (!hasTimeExpired && elapsed < 2)) {
+      return;
+    }
     setShowAnswer(true);
     stopTimer();
     setHasTimeExpired(false);
@@ -208,12 +218,14 @@ export function QuizRunner({
     const newTime = currentQuestion?.time_to_answer || 30;
     resetTimer(newTime);
     setHasTimeExpired(false);
+    // Auto-start timer for the question
+    startTimer();
     
     saveSessionState({
       show_answer: false,
       time_left: newTime,
-      timer_active: false,
-      timer_started: false,
+      timer_active: true,
+      timer_started: true,
       has_time_expired: false
     });
   };
@@ -570,6 +582,11 @@ export function QuizRunner({
           isFullScreen={isFullScreen}
           showAnswer={showAnswer}
           hasTimeExpired={hasTimeExpired}
+          canRevealAnswer={(() => {
+            const limit = currentQuestion?.time_to_answer || 30;
+            const elapsed = Math.max(0, limit - timeLeft);
+            return timerStarted && (hasTimeExpired || elapsed >= 2);
+          })()}
           themeClasses={themeClasses}
           onShowAnswer={handleShowAnswer}
           onShowQuestion={handleShowQuestion}

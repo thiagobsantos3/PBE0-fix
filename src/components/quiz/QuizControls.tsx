@@ -5,6 +5,7 @@ interface QuizControlsProps {
   isFullScreen: boolean;
   showAnswer: boolean;
   hasTimeExpired: boolean;
+  canRevealAnswer?: boolean;
   themeClasses: any;
   onShowAnswer: () => void;
   onShowQuestion: () => void;
@@ -16,6 +17,7 @@ export function QuizControls({
   isFullScreen,
   showAnswer,
   hasTimeExpired,
+  canRevealAnswer = true,
   themeClasses,
   onShowAnswer,
   onShowQuestion,
@@ -87,6 +89,7 @@ export function QuizControls({
             <div className="sm:hidden flex justify-center">
               <button
                 onClick={onShowAnswer}
+                disabled={!canRevealAnswer}
                 className={`${themeClasses.button} px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 text-lg w-full max-w-xs justify-center`}
               >
                 <Eye className="h-5 w-5" />
@@ -98,6 +101,7 @@ export function QuizControls({
             <div className="hidden sm:flex justify-center">
               <button
                 onClick={onShowAnswer}
+                disabled={!canRevealAnswer}
                 className={`${themeClasses.button} px-8 py-4 rounded-lg transition-colors duration-200 flex items-center space-x-2 text-[2.5vw]`}
               >
                 <Eye className="h-[2vw] w-[2vw]" />
@@ -116,6 +120,7 @@ export function QuizControls({
       {!showAnswer ? (
         <button
           onClick={onShowAnswer}
+          disabled={!canRevealAnswer}
           className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center space-x-2"
         >
           <Eye className="h-5 w-5" />

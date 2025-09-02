@@ -68,11 +68,38 @@ export function useQuizHistoryData({ userId, startDate, endDate }: UseQuizHistor
       console.log('✅ useQuizHistoryData: Fetched', sessions?.length || 0, 'quiz history entries.');
       
       // Calculate questions_count from the questions array
-      const processedSessions = (sessions || []).map(session => ({
+      const baseSessions = (sessions || []).map(session => ({
         ...session,
         questions_count: Array.isArray(session.questions) ? session.questions.length : 0
       }));
-      
+
+      // Fetch actual time spent per session from question logs and prefer it over estimated_minutes
+      const sessionIds = baseSessions.map(s => s.id);
+      let actualTimesBySession: Record<string, number> = {};
+      if (sessionIds.length > 0) {
+        const { data: logs, error: logsError } = await supabase
+          .from('quiz_question_logs')
+          .select('quiz_session_id, time_spent')
+          .in('quiz_session_id', sessionIds);
+        if (!logsError && logs) {
+          for (const log of logs) {
+            const sid = (log as any).quiz_session_id as string;
+            const seconds = Number((log as any).time_spent) || 0;
+            actualTimesBySession[sid] = (actualTimesBySession[sid] || 0) + seconds;
+          }
+        }
+      }
+
+      const processedSessions = baseSessions.map(s => {
+        const actualSeconds = actualTimesBySession[s.id] || 0;
+        const actualMinutes = Math.round(actualSeconds / 60);
+        return {
+          ...s,
+          // Prefer actual time if available, else fallback to estimated
+          estimated_minutes: actualMinutes > 0 ? actualMinutes : s.estimated_minutes,
+        };
+      });
+
       setData(processedSessions);
 
     } catch (err: any) {
