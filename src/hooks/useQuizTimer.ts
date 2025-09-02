@@ -12,32 +12,31 @@ export function useQuizTimer({ initialTime, onTimeExpired, onTimeUpdate }: UseQu
   const [timerStarted, setTimerStarted] = useState(false);
   const [hasTimeExpired, setHasTimeExpired] = useState(false);
 
-  // Timer effect
+  // Timer effect - keep a stable interval even if onTimeUpdate/onTimeExpired identities change
+  const onUpdateRef = useRef(onTimeUpdate);
+  const onExpiredRef = useRef(onTimeExpired);
+  useEffect(() => { onUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
+  useEffect(() => { onExpiredRef.current = onTimeExpired; }, [onTimeExpired]);
+
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | undefined;
     if (timerActive) {
       interval = setInterval(() => {
         setTimeLeft(prevTimeLeft => {
           const newTimeLeft = prevTimeLeft - 1;
-          onTimeUpdate(newTimeLeft);
-          
+          // Use refs to avoid effect retriggering each render
+          onUpdateRef.current(newTimeLeft);
           if (newTimeLeft <= 0) {
             setTimerActive(false);
             setHasTimeExpired(true);
-            onTimeExpired();
+            onExpiredRef.current();
           }
-          
           return Math.max(0, newTimeLeft);
         });
       }, 1000);
     }
-    
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [timerActive, onTimeExpired, onTimeUpdate]);
+    return () => { if (interval) clearInterval(interval); };
+  }, [timerActive]);
 
   const startTimer = useCallback(() => {
     if (!timerStarted && !hasTimeExpired) {

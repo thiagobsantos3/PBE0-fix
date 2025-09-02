@@ -37,6 +37,7 @@ export function QuizRunner({
 
   // Track when each question starts for accurate time calculation
   const questionStartTimeRef = useRef<number | null>(null);
+  const hasRestoredFromSessionRef = useRef<boolean>(false);
 
   // Use quizSessionId from URL params if available, otherwise use prop
   const quizSessionId = params.quizSessionId || propQuizSessionId;
@@ -84,7 +85,7 @@ export function QuizRunner({
     }, [quizSessionId, updateQuizSession])
   });
 
-  // Load session on mount
+  // Load session on mount (and avoid resetting timer state on subsequent session list updates)
   useEffect(() => {
     if (!quizSessionId) {
       console.error('No quiz session ID provided');
@@ -103,21 +104,25 @@ export function QuizRunner({
         return;
       }
 
-      setSession(loadedSession);
-      
-      // Restore quiz state from session
-      if (loadedSession.status === 'completed') {
-        setQuizCompleted(true);
-      } else {
-        // Start or resume the quiz immediately
-        setShowAnswer(loadedSession.show_answer);
-        resetTimer(loadedSession.time_left);
-        setHasTimeExpired(loadedSession.has_time_expired);
-        setTimerActiveState(loadedSession.timer_active);
-        setTimerStartedState(loadedSession.timer_started);
-        if (!loadedSession.show_answer) {
-          questionStartTimeRef.current = Date.now();
+      // Only perform full restoration once to prevent timer from stopping on each tick update
+      if (!hasRestoredFromSessionRef.current) {
+        setSession(loadedSession);
+        
+        // Restore quiz state from session
+        if (loadedSession.status === 'completed') {
+          setQuizCompleted(true);
+        } else {
+          // Start or resume the quiz immediately
+          setShowAnswer(loadedSession.show_answer);
+          resetTimer(loadedSession.time_left);
+          setHasTimeExpired(loadedSession.has_time_expired);
+          setTimerActiveState(loadedSession.timer_active);
+          setTimerStartedState(loadedSession.timer_started);
+          if (!loadedSession.show_answer) {
+            questionStartTimeRef.current = Date.now();
+          }
         }
+        hasRestoredFromSessionRef.current = true;
       }
     } catch (error) {
       console.error('Error loading quiz session:', error);
