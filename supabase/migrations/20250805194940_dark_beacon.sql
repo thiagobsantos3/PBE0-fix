@@ -70,27 +70,45 @@ BEGIN
           END
         ), 0
       ) as total_time_spent_minutes,
-      -- Calculate study streak for each member
+      -- Calculate CURRENT study streak for each member (Europe/London timezone)
       (
-        WITH daily_activity AS (
-          SELECT DISTINCT DATE(qs.completed_at) as study_date
+        WITH tz AS (
+          SELECT (NOW() AT TIME ZONE 'Europe/London')::date AS today_london
+        ),
+        daily_activity AS (
+          SELECT DISTINCT (qs.completed_at AT TIME ZONE 'Europe/London')::date AS study_date
           FROM quiz_sessions qs
           WHERE qs.user_id = up.id
             AND qs.status = 'completed'
             AND qs.completed_at BETWEEN v_start_date AND v_end_date
           ORDER BY study_date DESC
         ),
+        most_recent AS (
+          SELECT study_date FROM daily_activity ORDER BY study_date DESC LIMIT 1
+        ),
         streak_calc AS (
           SELECT 
             study_date,
-            ROW_NUMBER() OVER (ORDER BY study_date DESC) as rn,
-            study_date - (ROW_NUMBER() OVER (ORDER BY study_date DESC) || ' days')::INTERVAL as grp
+            ROW_NUMBER() OVER (ORDER BY study_date DESC) AS rn,
+            study_date - (ROW_NUMBER() OVER (ORDER BY study_date DESC)) * INTERVAL '1 day' AS grp
           FROM daily_activity
         )
-        SELECT COUNT(*)
-        FROM streak_calc
-        WHERE grp = (SELECT grp FROM streak_calc ORDER BY study_date DESC LIMIT 1)
-      ) as study_streak,
+        SELECT CASE
+          -- Only count streak if the most recent study day is today or yesterday (London)
+          WHEN EXISTS (
+            SELECT 1
+            FROM most_recent mr, tz
+            WHERE mr.study_date = tz.today_london
+               OR mr.study_date = (tz.today_london - 1)
+          )
+          THEN (
+            SELECT COUNT(*)
+            FROM streak_calc
+            WHERE grp = (SELECT grp FROM streak_calc ORDER BY study_date DESC LIMIT 1)
+          )
+          ELSE 0
+        END
+      ) AS study_streak,
       COALESCE(SUM(qs.total_points), 0) as total_points_earned,
       COALESCE(SUM(qs.max_points), 0) as total_possible_points
     FROM user_profiles up
