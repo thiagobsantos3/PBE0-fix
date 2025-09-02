@@ -65,7 +65,18 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
-      setSessions(data || []);
+      // Normalize questions/results fields to arrays if they came back as JSON strings
+      const normalized = (data || []).map((row: any) => {
+        const normalizedRow: any = { ...row };
+        if (typeof normalizedRow.questions === 'string') {
+          try { normalizedRow.questions = JSON.parse(normalizedRow.questions); } catch {}
+        }
+        if (typeof normalizedRow.results === 'string') {
+          try { normalizedRow.results = JSON.parse(normalizedRow.results); } catch {}
+        }
+        return normalizedRow;
+      });
+      setSessions(normalized as unknown as QuizSession[]);
     } catch (error) {
       console.error('Error loading quiz sessions:', error);
     }
@@ -77,9 +88,16 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
     try {
       developerLog('🚀 Creating quiz session...', sessionData);
       
+      // Serialize potentially JSON/Text columns for DB while keeping arrays in memory
+      const insertPayload: any = {
+        ...sessionData,
+        questions: JSON.stringify(sessionData.questions),
+        results: JSON.stringify(sessionData.results),
+      };
+
       const { data, error } = await supabase
         .from('quiz_sessions')
-        .insert([sessionData])
+        .insert([insertPayload])
         .select()
         .single();
 
@@ -91,7 +109,8 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
       developerLog('✅ Quiz session created successfully:', data);
 
       // Add to local state
-      setSessions(prev => [data, ...prev]);
+      // Use original arrays locally
+      setSessions(prev => [{ ...(data as any), questions: sessionData.questions, results: sessionData.results }, ...prev]);
       
       return data.id;
     } catch (error) {
@@ -132,9 +151,18 @@ export function QuizSessionProvider({ children }: { children: ReactNode }) {
         });
       }
       
+      // Serialize for DB
+      const dbPayload: any = { ...updates };
+      if (updates.results) {
+        dbPayload.results = JSON.stringify(updates.results);
+      }
+      if (updates.questions) {
+        dbPayload.questions = JSON.stringify(updates.questions);
+      }
+
       const { error } = await supabase
         .from('quiz_sessions')
-        .update(updates)
+        .update(dbPayload)
         .eq('id', sessionId);
 
       if (error) throw error;
