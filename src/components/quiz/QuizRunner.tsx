@@ -218,14 +218,12 @@ export function QuizRunner({
     const newTime = currentQuestion?.time_to_answer || 30;
     resetTimer(newTime);
     setHasTimeExpired(false);
-    // Auto-start timer for the question
-    startTimer();
     
     saveSessionState({
       show_answer: false,
       time_left: newTime,
-      timer_active: true,
-      timer_started: true,
+      timer_active: false,
+      timer_started: false,
       has_time_expired: false
     });
   };
@@ -439,11 +437,11 @@ export function QuizRunner({
       averageTime: 0,
     };
 
-    const totalPointsEarned = session.results.reduce((sum, result) => sum + result.pointsEarned, 0);
-    const totalPossiblePoints = session.results.reduce((sum, result) => sum + result.totalPoints, 0);
-    const correctAnswers = session.results.filter(result => result.pointsEarned === result.totalPoints).length;
+    const totalPointsEarned = session.results.reduce((sum, result) => sum + (Number(result.pointsEarned) || 0), 0);
+    const totalPossiblePoints = session.results.reduce((sum, result) => sum + (Number(result.totalPoints) || 0), 0);
+    const correctAnswers = session.results.filter(result => (Number(result.pointsEarned) || 0) === (Number(result.totalPoints) || 0)).length;
     const accuracy = session.results.length > 0 ? Math.round((correctAnswers / session.results.length) * 100) : 0;
-    const averageTime = session.results.length > 0 ? Math.round(session.results.reduce((sum, result) => sum + result.timeSpent, 0) / session.results.length) : 0;
+    const averageTime = session.results.length > 0 ? Math.round(session.results.reduce((sum, result) => sum + (Number(result.timeSpent) || 0), 0) / session.results.length) : 0;
 
     return {
       totalPointsEarned,

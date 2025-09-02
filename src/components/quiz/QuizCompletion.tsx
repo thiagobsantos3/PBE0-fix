@@ -31,7 +31,14 @@ export function QuizCompletion({
   onBack,
   formatTime
 }: QuizCompletionProps) {
-  const totalXpEarned = stats.totalPointsEarned + bonusXp;
+  const safeTotalPossible = Math.max(0, Number(stats.totalPossiblePoints) || 0);
+  const safeTotalEarned = Math.max(0, Number(stats.totalPointsEarned) || 0);
+  const safeCorrect = Math.max(0, Number(stats.correctAnswers) || 0);
+  const safeTotal = Math.max(0, Number(stats.totalQuestions) || 0);
+  const safeAverageTime = Math.max(0, Number(stats.averageTime) || 0);
+  const safeAccuracy = safeTotal > 0 ? Math.round((safeCorrect / safeTotal) * 100) : 0;
+  const safeScorePct = safeTotalPossible > 0 ? Math.round((safeTotalEarned / safeTotalPossible) * 100) : 0;
+  const totalXpEarned = safeTotalEarned + (Number(bonusXp) || 0);
 
   return (
     <div className={`min-h-screen ${themeClasses.background}`}>
@@ -104,27 +111,27 @@ export function QuizCompletion({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
               <div className={`bg-gray-50 ${isFullScreen ? 'bg-white/10' : ''} p-6 rounded-lg`}>
                 <div className="text-3xl font-bold text-green-600 mb-2">
-                  {stats.accuracy}%
+                  {safeAccuracy}%
                 </div>
                 <div className={`text-sm ${themeClasses.textSecondary}`}>Accuracy</div>
                 <div className={`text-xs ${themeClasses.textSecondary} mt-1`}>
-                  {stats.correctAnswers} of {stats.totalQuestions} correct
+                  {safeCorrect} of {safeTotal} correct
                 </div>
               </div>
               
               <div className={`bg-gray-50 ${isFullScreen ? 'bg-white/10' : ''} p-6 rounded-lg`}>
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {stats.totalPointsEarned}
+                  {safeTotalEarned}
                 </div>
                 <div className={`text-sm ${themeClasses.textSecondary}`}>Points Earned</div>
                 <div className={`text-xs ${themeClasses.textSecondary} mt-1`}>
-                  of {stats.totalPossiblePoints} possible
+                  of {safeTotalPossible} possible
                 </div>
               </div>
               
               <div className={`bg-gray-50 ${isFullScreen ? 'bg-white/10' : ''} p-6 rounded-lg`}>
                 <div className="text-3xl font-bold text-purple-600 mb-2">
-                  {formatTime(stats.averageTime)}
+                  {formatTime(safeAverageTime)}
                 </div>
                 <div className={`text-sm ${themeClasses.textSecondary}`}>Avg Time</div>
                 <div className={`text-xs ${themeClasses.textSecondary} mt-1`}>per question</div>
@@ -132,7 +139,7 @@ export function QuizCompletion({
               
               <div className={`bg-gray-50 ${isFullScreen ? 'bg-white/10' : ''} p-6 rounded-lg`}>
                 <div className="text-3xl font-bold text-orange-600 mb-2">
-                  {Math.round((stats.totalPointsEarned / stats.totalPossiblePoints) * 100)}%
+                  {safeScorePct}%
                 </div>
                 <div className={`text-sm ${themeClasses.textSecondary}`}>Score</div>
                 <div className={`text-xs ${themeClasses.textSecondary} mt-1`}>overall performance</div>

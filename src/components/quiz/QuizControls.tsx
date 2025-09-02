@@ -90,7 +90,7 @@ export function QuizControls({
               <button
                 onClick={onShowAnswer}
                 disabled={!canRevealAnswer}
-                className={`${themeClasses.button} px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 text-lg w-full max-w-xs justify-center`}
+                className={`${canRevealAnswer ? themeClasses.button : 'bg-gray-300 text-gray-500'} px-6 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 text-lg w-full max-w-xs justify-center`}
               >
                 <Eye className="h-5 w-5" />
                 <span>{hasTimeExpired ? 'Show Answer to Mark' : 'Show Answer'}</span>
@@ -102,7 +102,7 @@ export function QuizControls({
               <button
                 onClick={onShowAnswer}
                 disabled={!canRevealAnswer}
-                className={`${themeClasses.button} px-8 py-4 rounded-lg transition-colors duration-200 flex items-center space-x-2 text-[2.5vw]`}
+                className={`${canRevealAnswer ? themeClasses.button : 'bg-gray-300 text-gray-500'} px-8 py-4 rounded-lg transition-colors duration-200 flex items-center space-x-2 text-[2.5vw]`}
               >
                 <Eye className="h-[2vw] w-[2vw]" />
                 <span>{hasTimeExpired ? 'Show Answer to Mark' : 'Show Answer'}</span>
@@ -121,7 +121,7 @@ export function QuizControls({
         <button
           onClick={onShowAnswer}
           disabled={!canRevealAnswer}
-          className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-indigo-700 transition-colors duration-200 flex items-center space-x-2"
+          className={`px-8 py-3 rounded-lg text-lg font-medium transition-colors duration-200 flex items-center space-x-2 ${canRevealAnswer ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
         >
           <Eye className="h-5 w-5" />
           <span>{hasTimeExpired ? 'Show Answer to Mark' : 'Show Answer'}</span>

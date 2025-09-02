@@ -66,7 +66,7 @@ export function QuizHeader({
               <button
                 onClick={onStartTimer}
                 disabled={timerStarted || showAnswer}
-                className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-200 ${themeClasses.timerButton}`}
+                className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-all duration-200 ${themeClasses.timerButton} ${!timerStarted && !showAnswer ? 'opacity-100' : 'opacity-60'}`}
               >
                 <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className={`font-mono text-sm sm:text-lg ${timeLeft <= 10 ? 'text-red-300' : ''}`}>
@@ -119,7 +119,7 @@ export function QuizHeader({
           <button
             onClick={onStartTimer}
             disabled={timerStarted || showAnswer}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${themeClasses.timerButton}`}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${themeClasses.timerButton} ${!timerStarted && !showAnswer ? 'opacity-100' : 'opacity-60'}`}
           >
             <Clock className="h-4 w-4" />
             <span className={`font-mono text-lg ${timeLeft <= 10 ? 'text-red-600' : ''}`}>
